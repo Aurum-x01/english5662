@@ -1,1 +1,138 @@
-a
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Słownik angielsko-polski</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--text:#1b1d28;--muted:#6b7084;--accent:#4f46e5;--line:#e4e6f0;--mark:#fde68a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12131a;--card:#1c1e29;--text:#e8e9f1;--muted:#9296ab;--accent:#818cf8;--line:#2c2f3f;--mark:#854d0e}}
+:root[data-theme="dark"]{--bg:#12131a;--card:#1c1e29;--text:#e8e9f1;--muted:#9296ab;--accent:#818cf8;--line:#2c2f3f;--mark:#854d0e}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4}
+main{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.5rem;margin:8px 0 4px}
+.sub{color:var(--muted);margin:0 0 16px;font-size:.9rem}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:8px 0;z-index:5}
+input{width:100%;padding:14px 16px;font-size:1rem;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);outline:none}
+input:focus{border-color:var(--accent)}
+.row{display:flex;gap:8px;margin-top:8px;align-items:center;justify-content:space-between;color:var(--muted);font-size:.85rem}
+button{background:none;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.85rem}
+.list{margin-top:8px;display:grid;gap:8px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:baseline}
+.en{font-weight:600;color:var(--accent);overflow-wrap:anywhere}
+.pl{overflow-wrap:anywhere}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
+.empty{text-align:center;color:var(--muted);padding:32px 0}
+@media (max-width:480px){.item{grid-template-columns:1fr;gap:2px}}
+</style>
+</head>
+<body>
+<main>
+<h1>Słownik angielsko-polski</h1>
+<p class="sub">Wpisz polskie słowo (z polskimi znakami lub bez), aby znaleźć angielski odpowiednik.</p>
+<div class="bar">
+<input id="q" type="search" placeholder="Szukaj po polsku, np. rozwiązanie" autocomplete="off" autofocus>
+<div class="row"><span id="count"></span><button id="mode">Szukaj też po angielsku: wył.</button></div>
+</div>
+<div id="list" class="list"></div>
+</main>
+<script>
+const RAW = `data – dane
+to solve – rozwiązywać
+to carry out – przeprowadzać
+research – badania
+a skill – umiejętność
+to stay up to date with sth – być na bieżąco
+digital – cyfrowy
+a profession – zawód
+to be in demand – popyt na
+to range from sth to sth – obejmować
+to evolve – rozwijać się
+knowledge – wiedza
+relevant – istotny, dotyczący
+to make sure – upewniać się
+to ensure / ascertain – zapewniać
+to pursue career in – robić karierę w
+to prepare – przygotowywać
+outdated – nieaktualny
+a colleague – współpracownik
+to resolve a technological issue – rozwiązać problem techniczny
+a query – zapytanie
+to deal with – zajmować się
+to prevent from – powstrzymać przed
+to alleviate – łagodzić
+efficiently – wydajnie
+to expect – oczekiwać
+a mindset – sposób myślenia
+a solution – rozwiązanie
+to encourage – zachęcać
+a benefit – zysk, korzyść
+reliable – niezawodny
+to oversee – nadzorować
+maintenance – konserwacja, utrzymanie
+to deploy – wdrożyć, użyć
+to debug – wyszukiwać i usuwać usterki
+a refinement – udoskonalenie
+a major – kierunek studiów
+PHP – interpretowany, skryptowy język programowania zaprojektowany do tworzenia stron internetowych
+a stakeholder – akcjonariusz
+to implement – wdrażać
+to have a firm grasp of sth – mieć pojęcie o czymś
+a requirement – wymóg
+to be in charge of sth – zarządzać czymś
+self-motivated – z silną motywacją wewnętrzną
+have a flair for sth – mieć smykałkę do czegoś
+to pair sth with sth – iść w parze z czymś
+to provide – zapewniać, zaopatrywać
+mentorship – doradztwo
+a contributor – ofiarodawca
+portfolio – teczka prac
+to team up – działać w drużynie
+a characteristic – cecha charakterystyczna
+journey mapping – mapa podróży (wizualna interpretacja relacji między produktem a klientem w odniesieniu do czasu i przestrzeni)
+scalable – skalowalny
+to supervise – nadzorować
+an ability – umiejętność
+chip in – wtrącać się
+quantitative data – dane ilościowe
+to come up with – wpaść na pomysł
+to confirm – potwierdzić
+to identify – zidentyfikować
+dental – stomatologiczny
+tuition – czesne
+an achievement – osiągnięcie`;
+const WORDS = RAW.split("\n").map(l => { const i = l.indexOf(" – "); return {en: l.slice(0,i), pl: l.slice(i+3)}; });
+const MAP = {"ą":"a","ć":"c","ę":"e","ł":"l","ń":"n","ó":"o","ś":"s","ź":"z","ż":"z"};
+const norm = s => Array.from(s.toLowerCase()).map(c => MAP[c] || c).join("");
+const $ = id => document.getElementById(id);
+let both = false;
+function esc(s){return s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function hl(text, q){
+  if(!q) return esc(text);
+  const n = norm(text); let out = "", pos = 0, i;
+  while((i = n.indexOf(q, pos)) !== -1){
+    out += esc(text.slice(pos,i)) + "<mark>" + esc(text.slice(i,i+q.length)) + "</mark>";
+    pos = i + q.length;
+  }
+  return out + esc(text.slice(pos));
+}
+function render(){
+  const q = norm($("q").value.trim());
+  const res = WORDS.filter(w => !q || norm(w.pl).includes(q) || (both && norm(w.en).includes(q)));
+  $("count").textContent = res.length + " / " + WORDS.length + " słów";
+  $("list").innerHTML = res.length ? res.map(w =>
+    '<div class="item"><div class="en">' + (both ? hl(w.en,q) : esc(w.en)) + '</div><div class="pl">' + hl(w.pl,q) + '</div></div>'
+  ).join("") : '<div class="empty">Nic nie znaleziono</div>';
+}
+$("q").addEventListener("input", render);
+$("mode").addEventListener("click", () => {
+  both = !both;
+  $("mode").textContent = "Szukaj też po angielsku: " + (both ? "wł." : "wył.");
+  render();
+});
+render();
+</script>
+</body>
+</html>
